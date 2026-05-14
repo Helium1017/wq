@@ -1,0 +1,81 @@
+auth:
+  auth_url: "https://api.worldquantbrain.com/authentication"
+  datafield_url: "https://api.worldquantbrain.com/data-fields"
+  sim_url: "https://api.worldquantbrain.com/simulations"
+  creds_file: "brain.txt"
+
+system:
+  retry_times: 80
+
+# 三组数据字段配置（直接对应 {datafield1}/{datafield2}/{datafield3}）
+datafield:
+  datafield1:  # 对应模板中的 {datafield1}
+    search_scope:
+      type: MATRIX
+      instrumentType: "EQUITY"
+      region: "USA"
+      delay: 1
+      universe: "TOP3000"
+    dataset_id: ""
+    search: "fundamental6"  # 自定义搜索关键词
+    limit: 50
+  datafield2:  # 对应模板中的 {datafield2}
+    search_scope:
+      type: MATRIX
+      instrumentType: "EQUITY"
+      region: "USA"
+      delay: 1
+      universe: "TOP3000"
+    dataset_id: ""
+    search: ""  # 自定义搜索关键词
+    limit: 50
+  datafield3:  # 对应模板中的 {datafield3}
+    search_scope:
+      type: MATRIX
+      instrumentType: "EQUITY"
+      region: "USA"
+      delay: 1
+      universe: "TOP3000"
+    dataset_id: ""
+    search: ""  # 自定义搜索关键词
+    limit: 50
+
+alpha:
+  # 三组算子（直接对应 {operator1}/{operator2}/{operator3}）
+  operators:
+   operator1: ["ts_rank", "ts_delta", "ts_mean"]  # 对应 {operator1}
+   operator2: ["group_rank", "group_delta"]       # 对应 {operator2}
+   operator3: ["cross_rank"]                      # 对应 {operator3}
+  # 三组回溯期（直接对应 {lookback1}/{lookback2}/{lookback3}）
+  lookbacks:
+    lookback1: [60, 90,120]  # 对应 {lookback1}
+    lookback2: [30, 90]  # 对应 {lookback2}
+    lookback3: [10, 40]  # 对应 {lookback3}
+  type: "REGULAR"
+  settings:
+    instrumentType: "EQUITY"
+    region: "USA"
+    universe: "TOP3000"
+    delay: 1
+    decay: 0
+    neutralization: "INDUSTRY"
+    truncation: 0.08
+    pasteurization: "ON"
+    unitHandling: "VERIFY"
+    nanHandling: "ON"
+    language: "FASTEXPR"
+    visualization: false
+  # 模板中直接使用编号占位符（与配置中的1/2/3对应）
+  template: "my_group = market;my_group2 = bucket(rank(cap), range='0,1,0.1');alpha=rank(group_rank(ts_decay_linear(volume/ts_sum(volume,252),10),my_group)*group_rank(ts_rank({datafield1},20),my_group)*group_rank(-ts_delta(close,5),my_group));trade_when(volume>adv20,group_neutralize(alpha,my_group2),-1)"
+
+storage:
+  pending_file: "alpha_list_pending.csv"
+  completed_file: "completed_alphas.csv"
+  failed_file: "failed_alphas.csv"
+  # 关键修改：在fieldnames中添加'alpha'列
+  fieldnames: ["type", "settings", "regular", "alpha_id", "status", "error_msg", "operator", "config", "idx", "expr", "alpha"]
+
+simulation:
+  retry_times: 15
+  timeout: 30
+  max_workers: 3
